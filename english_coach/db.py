@@ -73,7 +73,16 @@ def insert_correction(
               (ts, session_id, session_date, language, original, correction, explanation, uuid)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (ts, session_id, session_date, language, original, correction, explanation, uuid),
+            (
+                ts,
+                session_id,
+                session_date,
+                language,
+                original,
+                correction,
+                explanation,
+                uuid,
+            ),
         )
 
 
