@@ -23,3 +23,19 @@ Key routing rules:
 - Visual audit, design polish → invoke design-review
 - Architecture review → invoke plan-eng-review
 - Save progress, checkpoint, resume → invoke context-save
+- Writing or reviewing implementation code → invoke karpathy-guidelines first
+
+## Tech stack
+
+- Language: Python (managed by **uv**, see `pyproject.toml`)
+- Server: FastAPI + uvicorn, listening on `127.0.0.1:8765`
+- UI: Vanilla HTML/JS served as static files by FastAPI (`static/index.html`)
+- DB: SQLite with WAL mode (`data/history.db`)
+- LLM: Anthropic Claude API (`claude-haiku-4-5-20251001`)
+- Hook runtime: `uv run python -m english_coach.hook` (Claude Code Stop hook)
+
+## Key documents
+
+- `docs/PLAN.md` — v1 implementation plan (steps, DB schema, data flow)
+- `docs/designs_english_coach.md` — product design spec
+- `docs/architecture_english_coach.md` — architecture spec
