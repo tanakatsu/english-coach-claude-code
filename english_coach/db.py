@@ -69,9 +69,10 @@ def insert_correction(
     with _connect() as conn:
         conn.execute(
             """
-            INSERT OR IGNORE INTO corrections
+            INSERT INTO corrections
               (ts, session_id, session_date, language, original, correction, explanation, uuid)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(uuid) DO NOTHING
             """,
             (
                 ts,
