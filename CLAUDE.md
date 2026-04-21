@@ -34,6 +34,11 @@ Key routing rules:
 - LLM: Anthropic Claude API (`claude-haiku-4-5-20251001`)
 - Hook runtime: `uv run python -m english_coach.hook` (Claude Code Stop hook)
 
+## Development rules
+
+- After implementing a feature, always run tests (`uv run pytest`).
+- If any tests fail, fix the code until all tests pass before considering the task done.
+
 ## Key documents
 
 - `docs/PLAN.md` — v1 implementation plan (steps, DB schema, data flow)
