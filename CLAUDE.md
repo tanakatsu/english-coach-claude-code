@@ -36,7 +36,7 @@ Key routing rules:
 
 ## Development rules
 
-- After implementing a feature, always run tests (`uv run pytest`).
+- After implementing a feature, write minimal test code to ensure quality and always run tests (`uv run pytest`).
 - If any tests fail, fix the code until all tests pass before considering the task done.
 
 ## Key documents
