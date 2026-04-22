@@ -2,10 +2,296 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>English Coach</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      background: #f5f5f5;
+      color: #222;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
+
+    #last-updated { font-size: 12px; color: #aaa; }
+
+    main { max-width: 800px; margin: 0 auto; padding: 16px; }
+
+    /* Latest card */
+    #latest-card {
+      background: #fffbe6;
+      border: 1px solid #ffe066;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+
+    #latest-card[hidden] { display: none; }
+
+    #latest-card .label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #b8860b;
+      margin-bottom: 8px;
+      letter-spacing: 0.8px;
+    }
+
+    /* Filter bar */
+    #filter-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    #filter-bar button {
+      padding: 5px 14px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      color: #555;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    #filter-bar button.active {
+      background: #1a1a2e;
+      color: #fff;
+      border-color: #1a1a2e;
+    }
+
+    /* History list */
+    #history-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-ja { background: #e3f0ff; color: #1565c0; }
+    .badge-en { background: #e8f5e9; color: #2e7d32; }
+
+    .card-time { font-size: 11px; color: #999; }
+
+    .card-body {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .original { color: #555; flex: 1 1 200px; }
+    .arrow { color: #999; flex-shrink: 0; padding-top: 1px; }
+    .correction { color: #1a1a2e; font-weight: 500; flex: 1 1 200px; }
+
+    details { margin-top: 8px; }
+    summary {
+      cursor: pointer;
+      font-size: 12px;
+      color: #888;
+      user-select: none;
+    }
+    summary:hover { color: #555; }
+    .explanation { margin-top: 6px; font-size: 12px; color: #666; line-height: 1.5; }
+
+    #empty {
+      text-align: center;
+      color: #aaa;
+      padding: 40px 0;
+      font-size: 13px;
+    }
+  </style>
 </head>
 <body>
-  <h1>English Coach</h1>
-  <p>Dashboard coming in Step 7.</p>
+  <header>
+    <h1>English Coach</h1>
+    <span id="last-updated">—</span>
+  </header>
+
+  <main>
+    <div id="latest-card" hidden>
+      <div class="label">Latest correction</div>
+      <div id="latest-content"></div>
+    </div>
+
+    <div id="filter-bar">
+      <button data-filter="all" class="active">All</button>
+      <button data-filter="today">Today</button>
+      <button data-filter="session">This Session</button>
+    </div>
+
+    <ul id="history-list"></ul>
+    <div id="empty" hidden>No corrections yet.</div>
+  </main>
+
+  <script>
+    const listEl = document.getElementById('history-list');
+    const emptyEl = document.getElementById('empty');
+    const latestCard = document.getElementById('latest-card');
+    const latestContent = document.getElementById('latest-content');
+    const lastUpdatedEl = document.getElementById('last-updated');
+
+    let allItems = [];
+    let maxId = 0;
+    let filter = 'all';
+    let currentSessionId = null;
+    const today = new Date().toLocaleDateString('en-CA');
+
+    function fmtTime(ts) {
+      try {
+        return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch { return ts; }
+    }
+
+    function makeCardHTML(item) {
+      const lang = item.language === 'ja' ? 'ja' : 'en';
+      const badge = `<span class="badge badge-${lang}">${lang.toUpperCase()}</span>`;
+      const time = `<span class="card-time">${fmtTime(item.ts)}</span>`;
+      const explanation = item.explanation
+        ? `<details><summary>Why</summary><div class="explanation">${escHtml(item.explanation)}</div></details>`
+        : '';
+      return `
+        <div class="card-meta">${badge}${time}</div>
+        <div class="card-body">
+          <span class="original">${escHtml(item.original)}</span>
+          <span class="arrow">→</span>
+          <span class="correction">${escHtml(item.correction)}</span>
+        </div>
+        ${explanation}
+      `;
+    }
+
+    function escHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function makeListItem(item) {
+      const li = document.createElement('li');
+      li.className = 'card';
+      li.dataset.id = item.id;
+      li.dataset.sessionId = item.session_id;
+      li.dataset.sessionDate = item.session_date;
+      li.innerHTML = makeCardHTML(item);
+      return li;
+    }
+
+    function applyFilter(items) {
+      if (filter === 'today') return items.filter(i => i.session_date === today);
+      if (filter === 'session') return items.filter(i => i.session_id === currentSessionId);
+      return items;
+    }
+
+    function renderList(items) {
+      listEl.innerHTML = '';
+      const filtered = applyFilter(items);
+      filtered.forEach(item => listEl.appendChild(makeListItem(item)));
+      emptyEl.hidden = filtered.length > 0;
+    }
+
+    function prependItems(newItems) {
+      const filtered = applyFilter(newItems);
+      // newItems are newest-first; prepend oldest-first so newest ends at top
+      [...filtered].reverse().forEach(item => {
+        listEl.prepend(makeListItem(item));
+      });
+      emptyEl.hidden = listEl.children.length > 0;
+    }
+
+    function renderLatestCard(item) {
+      latestContent.innerHTML = makeCardHTML(item);
+      latestCard.hidden = false;
+    }
+
+    function updateLastUpdated() {
+      lastUpdatedEl.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    async function init() {
+      try {
+        const res = await fetch('/api/latest?limit=200');
+        allItems = await res.json();
+        if (allItems.length > 0) {
+          maxId = allItems[0].id;
+          currentSessionId = allItems[0].session_id;
+          renderLatestCard(allItems[0]);
+        }
+        renderList(allItems);
+        updateLastUpdated();
+      } catch (e) {
+        console.error('init fetch failed', e);
+      }
+    }
+
+    async function poll() {
+      try {
+        const res = await fetch('/api/latest?limit=20');
+        const items = await res.json();
+        const newItems = items.filter(i => i.id > maxId);
+        if (newItems.length > 0) {
+          maxId = newItems[0].id;
+          currentSessionId = newItems[0].session_id;
+          allItems = [...newItems, ...allItems];
+          renderLatestCard(newItems[0]);
+          prependItems(newItems);
+          updateLastUpdated();
+        }
+      } catch (e) {
+        console.error('poll failed', e);
+      }
+    }
+
+    document.getElementById('filter-bar').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-filter]');
+      if (!btn) return;
+      filter = btn.dataset.filter;
+      document.querySelectorAll('#filter-bar button').forEach(b => b.classList.toggle('active', b === btn));
+      renderList(allItems);
+    });
+
+    init().then(() => setInterval(poll, 2000));
+  </script>
 </body>
 </html>

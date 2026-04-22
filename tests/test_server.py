@@ -100,6 +100,10 @@ def test_index_html(client):
     resp = client.get("/")
     assert resp.status_code == 200
     assert "text/html" in resp.headers["content-type"]
+    body = resp.text
+    assert "English Coach" in body
+    assert "/api/latest" in body
+    assert "filter-bar" in body
 
 
 def test_feedback_invalid_language(client):
