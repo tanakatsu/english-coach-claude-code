@@ -114,6 +114,18 @@ def get_history(
     return [dict(r) for r in rows]
 
 
+def insert_summary(session_id: str, ts: str, body: str) -> None:
+    with _connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO summaries (session_id, ts, body)
+            VALUES (?, ?, ?)
+            ON CONFLICT(session_id) DO UPDATE SET ts=excluded.ts, body=excluded.body
+            """,
+            (session_id, ts, body),
+        )
+
+
 def get_last_uuid(session_id: str) -> Optional[str]:
     with _connect() as conn:
         row = conn.execute(
