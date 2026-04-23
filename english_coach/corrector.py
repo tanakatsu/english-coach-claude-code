@@ -1,8 +1,14 @@
 import json
+import logging
 
 import anthropic
+from dotenv import load_dotenv
 
 from . import config
+
+load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 try:
     _client: anthropic.Anthropic | None = anthropic.Anthropic()
@@ -58,5 +64,6 @@ def correct(text: str, language: str) -> dict | None:
             "correction": str(data["correction"]),
             "explanation": str(data["explanation"]),
         }
-    except Exception:
+    except Exception as e:
+        logger.warning("corrector failed: %s", e)
         return None
