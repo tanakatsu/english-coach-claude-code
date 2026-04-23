@@ -18,6 +18,10 @@
 
 ## DB schema: reserve room for cross-session pattern tracking
 
+**Completed: v0.1.0 (2026-04-22)**
+
+`corrections` table has `pattern_id INTEGER` (nullable FK, always NULL in v1) and `session_date TEXT` (separate from `ts`). Empty `patterns` table is in place. Migration-free v2 path confirmed.
+
 **What:** Spend ~30 minutes designing a DB schema that doesn't block SRS (spaced repetition) in v2. Don't build SRS — just don't build a schema that makes it impossible.
 
 **Why:** The current design is `corrections(id, ts, original, language, correction, session_id)`. To track recurring patterns across sessions, you need at minimum: a `pattern_id` FK column (nullable in v1), a `patterns` table (empty in v1), and a `session_date` column separate from `ts`. Without these, adding SRS later requires a migration and a rewrite of the insertion logic.
