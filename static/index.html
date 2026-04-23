@@ -229,6 +229,11 @@
       const filtered = applyFilter(items);
       filtered.forEach(item => listEl.appendChild(makeListItem(item)));
       emptyEl.hidden = filtered.length > 0;
+      if (filtered.length > 0) {
+        renderLatestCard(filtered[0]);
+      } else {
+        latestCard.hidden = true;
+      }
     }
 
     function prependItems(newItems) {
@@ -274,10 +279,10 @@
           maxId = newItems[0].id;
           currentSessionId = newItems[0].session_id;
           allItems = [...newItems, ...allItems];
-          renderLatestCard(newItems[0]);
           prependItems(newItems);
-          updateLastUpdated();
+          renderLatestCard(applyFilter(allItems)[0] || newItems[0]);
         }
+        updateLastUpdated();
       } catch (e) {
         console.error('poll failed', e);
       }
