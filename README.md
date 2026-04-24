@@ -62,9 +62,35 @@ The server listens on `http://127.0.0.1:8765`. It creates the SQLite database on
 
 Navigate to [http://127.0.0.1:8765](http://127.0.0.1:8765) in your browser.
 
-**3. Use Claude Code normally**
+**3. Register the Stop hook globally**
 
-The Stop hook in `.claude/settings.json` fires automatically when each Claude Code session ends. Your messages are extracted, corrected, and sent to the dashboard. Within ~3 seconds, you'll see the correction cards appear.
+To capture messages from **all** Claude Code projects (not just this one), add the Stop hook to your global `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /path/to/english-coach-claude-code && uv run python -m english_coach.hook"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Replace `/path/to/english-coach-claude-code` with the absolute path to this repository.
+
+If you only want to monitor the current project, add the same entry to `.claude/settings.json` in your project root instead.
+
+**4. Use Claude Code normally**
+
+The hook fires automatically when each Claude Code session ends. Your messages are extracted, corrected, and sent to the dashboard. Within ~3 seconds, you'll see the correction cards appear.
 
 ## Dashboard
 
