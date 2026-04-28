@@ -6,6 +6,8 @@ _COMMAND_TAGS = (
     "<command-message>",
     "<command-args>",
     "<local-command-",
+    "<task-notification>",
+    "<system-reminder>",
 )
 
 

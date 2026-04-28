@@ -117,6 +117,34 @@ def test_excludes_local_command_tag(tmp_path):
     assert new_user_messages(path, None) == []
 
 
+def test_excludes_task_notification(tmp_path):
+    path = tmp_path / "s.jsonl"
+    _write_jsonl(
+        path,
+        [
+            _user_msg(
+                "u1", "<task-notification> <task-id>abc</task-id> </task-notification>"
+            ),
+            _user_msg("u2", "real input"),
+        ],
+    )
+    result = new_user_messages(path, None)
+    assert [r["uuid"] for r in result] == ["u2"]
+
+
+def test_excludes_system_reminder(tmp_path):
+    path = tmp_path / "s.jsonl"
+    _write_jsonl(
+        path,
+        [
+            _user_msg("u1", "<system-reminder>some system note</system-reminder>"),
+            _user_msg("u2", "real input"),
+        ],
+    )
+    result = new_user_messages(path, None)
+    assert [r["uuid"] for r in result] == ["u2"]
+
+
 def test_excludes_content_as_list(tmp_path):
     path = tmp_path / "s.jsonl"
     msg = {
