@@ -2,7 +2,7 @@ import json
 import logging
 import logging.handlers
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
@@ -19,6 +19,8 @@ _handler = logging.FileHandler(_LOG_PATH)
 _handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
 _logger.addHandler(_handler)
 _logger.setLevel(logging.ERROR)
+
+_JST = timezone(timedelta(hours=9))
 
 
 def _server_url() -> str:
@@ -50,11 +52,14 @@ def run(payload: dict) -> None:
             continue
 
         ts = msg["ts"] or datetime.now(timezone.utc).isoformat()
-        session_date = (
-            ts[:10]
-            if len(ts) >= 10
-            else datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        )
+        try:
+            session_date = (
+                datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                .astimezone(_JST)
+                .strftime("%Y-%m-%d")
+            )
+        except (ValueError, AttributeError):
+            session_date = datetime.now(_JST).strftime("%Y-%m-%d")
 
         payload_data = {
             "ts": ts,

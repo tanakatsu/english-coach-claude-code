@@ -114,6 +114,23 @@ def test_main_exits_zero_on_invalid_json(monkeypatch):
     assert exc_info.value.code == 0
 
 
+def test_run_session_date_uses_jst():
+    """UTC 15:30 on May 10 = JST 00:30 on May 11 — session_date must be 2026-05-11."""
+    msgs = [{"uuid": "u1", "text": "サーバーを起動して", "ts": "2026-05-10T15:30:00Z"}]
+    correction = {"correction": "Please start the server.", "explanation": "翻訳"}
+    with (
+        patch("english_coach.hook.db") as mock_db,
+        patch("english_coach.hook.new_user_messages", return_value=msgs),
+        patch("english_coach.hook.detect", return_value="ja"),
+        patch("english_coach.hook.correct", return_value=correction),
+        patch("english_coach.hook.httpx.post") as mock_post,
+    ):
+        mock_db.get_last_uuid.return_value = None
+        hook.run({"session_id": "s1", "transcript_path": "/fake/path.jsonl"})
+        posted = mock_post.call_args.kwargs["json"]
+        assert posted["session_date"] == "2026-05-11"
+
+
 def test_main_exits_zero_on_valid_payload(monkeypatch):
     payload = json.dumps({"session_id": "s1", "transcript_path": "/fake.jsonl"})
     monkeypatch.setattr("sys.stdin", __import__("io").StringIO(payload))
