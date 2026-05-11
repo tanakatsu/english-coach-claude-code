@@ -25,7 +25,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://127.0.0.1:8765", "http://localhost:8765"],
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PATCH"],
     allow_headers=["*"],
 )
 
@@ -76,6 +76,12 @@ def post_summary(data: SummaryIn):
 @app.get("/api/latest")
 def get_latest(limit: Annotated[int, Query(ge=1, le=500)] = 20):
     return db.get_latest(limit)
+
+
+@app.patch("/api/corrections/{correction_id}/hidden")
+def hide_correction(correction_id: int):
+    db.hide_correction(correction_id)
+    return {"ok": True}
 
 
 @app.get("/api/history")

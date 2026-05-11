@@ -89,6 +89,59 @@
       border: 1px solid #e0e0e0;
       border-radius: 8px;
       padding: 12px 14px;
+      position: relative;
+    }
+
+    #latest-card { position: relative; }
+
+    .delete-btn {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: #bbb;
+      line-height: 1;
+    }
+    .delete-btn:hover { color: #e55; }
+
+    .card.confirm-state .card-meta,
+    .card.confirm-state .card-body,
+    .card.confirm-state details,
+    #latest-card.confirm-state .card-meta,
+    #latest-card.confirm-state .card-body,
+    #latest-card.confirm-state details { opacity: 0.15; pointer-events: none; }
+
+    .confirm-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.95);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border: 1px solid #fcc;
+    }
+    .confirm-overlay span { font-size: 12px; color: #555; }
+    .confirm-yes {
+      padding: 4px 14px;
+      border: 1px solid #e55;
+      border-radius: 4px;
+      background: #fff;
+      color: #e55;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .confirm-cancel {
+      padding: 4px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 12px;
     }
 
     .card-meta {
@@ -157,6 +210,8 @@
       <button data-filter="all" class="active">All</button>
       <button data-filter="today">Today</button>
       <button data-filter="session">This Session</button>
+      <button data-filter="week">This Week</button>
+      <button data-filter="month">This Month</button>
     </div>
 
     <ul id="history-list"></ul>
@@ -174,7 +229,6 @@
     let maxId = 0;
     let filter = 'all';
     let currentSessionId = null;
-    const today = new Date().toLocaleDateString('en-CA');
 
     function fmtTime(ts) {
       try {
@@ -190,6 +244,7 @@
         ? `<details><summary>Why</summary><div class="explanation">${escHtml(item.explanation)}</div></details>`
         : '';
       return `
+        <button class="delete-btn" data-id="${item.id}" title="Hide">×</button>
         <div class="card-meta">${badge}${time}</div>
         <div class="card-body">
           <span class="original">${escHtml(item.original)}</span>
@@ -219,8 +274,19 @@
     }
 
     function applyFilter(items) {
+      const today = new Date().toLocaleDateString('en-CA');
       if (filter === 'today') return items.filter(i => i.session_date === today);
       if (filter === 'session') return items.filter(i => i.session_id === currentSessionId);
+      if (filter === 'week') {
+        const d = new Date();
+        d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+        const mondayStr = d.toLocaleDateString('en-CA');
+        return items.filter(i => i.session_date >= mondayStr && i.session_date <= today);
+      }
+      if (filter === 'month') {
+        const monthStr = today.slice(0, 7);
+        return items.filter(i => i.session_date.startsWith(monthStr));
+      }
       return items;
     }
 
@@ -294,6 +360,57 @@
       filter = btn.dataset.filter;
       document.querySelectorAll('#filter-bar button').forEach(b => b.classList.toggle('active', b === btn));
       renderList(allItems);
+    });
+
+    document.addEventListener('click', e => {
+      const deleteBtn = e.target.closest('.delete-btn');
+      if (deleteBtn) {
+        const card = deleteBtn.closest('.card') || deleteBtn.closest('#latest-card');
+        if (!card) return;
+        if (card.querySelector('.confirm-overlay')) return;
+        card.classList.add('confirm-state');
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        overlay.innerHTML = '<span>Hide this correction?</span><button class="confirm-yes">Hide</button><button class="confirm-cancel">Cancel</button>';
+        card.appendChild(overlay);
+        return;
+      }
+
+      const confirmYes = e.target.closest('.confirm-yes');
+      if (confirmYes) {
+        const card = confirmYes.closest('.card') || confirmYes.closest('#latest-card');
+        if (!card) return;
+        const hiddenId = parseInt(card.querySelector('.delete-btn').dataset.id, 10);
+        fetch(`/api/corrections/${hiddenId}/hidden`, { method: 'PATCH' })
+          .then(r => {
+            if (!r.ok) throw new Error('PATCH failed');
+            allItems = allItems.filter(i => i.id !== hiddenId);
+            const li = card.closest('li');
+            if (li) li.remove();
+            card.classList.remove('confirm-state');
+            const overlay = card.querySelector('.confirm-overlay');
+            if (overlay) overlay.remove();
+            const next = applyFilter(allItems)[0];
+            if (next) { renderLatestCard(next); } else { latestCard.hidden = true; }
+          })
+          .catch(err => {
+            console.error('hide failed', err);
+            card.classList.remove('confirm-state');
+            const overlay = card.querySelector('.confirm-overlay');
+            if (overlay) overlay.remove();
+          });
+        return;
+      }
+
+      const confirmCancel = e.target.closest('.confirm-cancel');
+      if (confirmCancel) {
+        const card = confirmCancel.closest('.card') || confirmCancel.closest('#latest-card');
+        if (!card) return;
+        card.classList.remove('confirm-state');
+        const overlay = card.querySelector('.confirm-overlay');
+        if (overlay) overlay.remove();
+        return;
+      }
     });
 
     init().then(() => setInterval(poll, 2000));

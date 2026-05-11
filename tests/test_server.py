@@ -124,3 +124,40 @@ def test_feedback_invalid_language(client):
 def test_latest_limit_too_large(client):
     resp = client.get("/api/latest?limit=999999")
     assert resp.status_code == 422
+
+
+def _post_feedback(client, uuid="uuid-hide-001"):
+    return client.post(
+        "/api/feedback",
+        json={
+            "ts": "2026-04-22T10:00:00Z",
+            "session_id": "sess-1",
+            "session_date": "2026-04-22",
+            "language": "ja",
+            "original": "original",
+            "correction": "corrected",
+            "explanation": None,
+            "uuid": uuid,
+        },
+    )
+
+
+def test_hide_correction_endpoint(client):
+    _post_feedback(client)
+    correction_id = client.get("/api/latest").json()[0]["id"]
+    resp = client.patch(f"/api/corrections/{correction_id}/hidden")
+    assert resp.status_code == 200
+    assert resp.json() == {"ok": True}
+
+
+def test_hide_removes_from_latest(client):
+    _post_feedback(client)
+    correction_id = client.get("/api/latest").json()[0]["id"]
+    client.patch(f"/api/corrections/{correction_id}/hidden")
+    assert client.get("/api/latest").json() == []
+
+
+def test_index_html_new_filter_buttons(client):
+    body = client.get("/").text
+    assert "This Week" in body
+    assert "This Month" in body

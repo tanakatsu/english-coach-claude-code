@@ -7,6 +7,7 @@ from english_coach.db import (
     get_history,
     get_last_uuid,
     get_latest,
+    hide_correction,
     init_db,
     insert_correction,
     set_last_uuid,
@@ -141,3 +142,40 @@ def test_set_last_uuid_upsert():
     set_last_uuid("sess-1", "uuid-1", _TS)
     set_last_uuid("sess-1", "uuid-2", _TS)
     assert get_last_uuid("sess-1") == "uuid-2"
+
+
+# ---------------------------------------------------------------------------
+# hidden column migration
+# ---------------------------------------------------------------------------
+
+
+def test_hidden_column_migration_idempotent():
+    init_db()  # second call on same DB — must not raise OperationalError
+
+
+def test_hide_correction():
+    _insert()
+    row_id = get_latest()[0]["id"]
+    hide_correction(row_id)
+    assert get_latest() == []
+
+
+def test_latest_excludes_hidden():
+    _insert(uuid="uuid-a")
+    _insert(uuid="uuid-b")
+    row_id = get_latest()[0]["id"]  # most recent
+    hide_correction(row_id)
+    rows = get_latest()
+    assert len(rows) == 1
+    assert rows[0]["uuid"] == "uuid-a"
+
+
+def test_history_excludes_hidden():
+    _insert(uuid="uuid-a", session_id="sess-X")
+    _insert(uuid="uuid-b", session_id="sess-X")
+    row_id = get_latest()[0]["id"]
+    hide_correction(row_id)
+    # without session_id filter
+    assert len(get_history()) == 1
+    # with session_id filter
+    assert len(get_history(session_id="sess-X")) == 1

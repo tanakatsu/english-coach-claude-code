@@ -54,6 +54,15 @@ def _connect() -> sqlite3.Connection:
 def init_db() -> None:
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        try:
+            conn.execute(
+                "ALTER TABLE corrections ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0"
+            )
+        except sqlite3.OperationalError:
+            pass  # column already exists
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_corrections_hidden ON corrections(hidden)"
+        )
 
 
 def insert_correction(
@@ -90,7 +99,7 @@ def insert_correction(
 def get_latest(n: int = 20) -> list[dict]:
     with _connect() as conn:
         rows = conn.execute(
-            "SELECT * FROM corrections ORDER BY id DESC LIMIT ?", (n,)
+            "SELECT * FROM corrections WHERE hidden = 0 ORDER BY id DESC LIMIT ?", (n,)
         ).fetchall()
     return [dict(r) for r in rows]
 
@@ -103,15 +112,20 @@ def get_history(
     with _connect() as conn:
         if session_id:
             rows = conn.execute(
-                "SELECT * FROM corrections WHERE session_id=? ORDER BY id DESC LIMIT ? OFFSET ?",
+                "SELECT * FROM corrections WHERE session_id=? AND hidden = 0 ORDER BY id DESC LIMIT ? OFFSET ?",
                 (session_id, limit, offset),
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT * FROM corrections ORDER BY id DESC LIMIT ? OFFSET ?",
+                "SELECT * FROM corrections WHERE hidden = 0 ORDER BY id DESC LIMIT ? OFFSET ?",
                 (limit, offset),
             ).fetchall()
     return [dict(r) for r in rows]
+
+
+def hide_correction(correction_id: int) -> None:
+    with _connect() as conn:
+        conn.execute("UPDATE corrections SET hidden = 1 WHERE id = ?", (correction_id,))
 
 
 def insert_summary(session_id: str, ts: str, body: str) -> None:
