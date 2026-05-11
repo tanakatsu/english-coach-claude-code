@@ -385,7 +385,7 @@
           .then(r => {
             if (!r.ok) throw new Error('PATCH failed');
             allItems = allItems.filter(i => i.id !== hiddenId);
-            const li = card.closest('li');
+            const li = card.closest('li') || listEl.querySelector(`li[data-id="${hiddenId}"]`);
             if (li) li.remove();
             card.classList.remove('confirm-state');
             const overlay = card.querySelector('.confirm-overlay');
