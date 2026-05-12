@@ -187,6 +187,23 @@ def test_excludes_bash_input_tag(tmp_path):
     assert [r["uuid"] for r in result] == ["u2"]
 
 
+def test_excludes_session_continuation_message(tmp_path):
+    path = tmp_path / "s.jsonl"
+    continuation = (
+        "This session is being continued from a previous conversation that ran out of context."
+        " The conversation is summarized below:\n..."
+    )
+    _write_jsonl(
+        path,
+        [
+            _user_msg("u1", continuation),
+            _user_msg("u2", "real input"),
+        ],
+    )
+    result = new_user_messages(path, None)
+    assert [r["uuid"] for r in result] == ["u2"]
+
+
 def test_excludes_content_as_list(tmp_path):
     path = tmp_path / "s.jsonl"
     msg = {

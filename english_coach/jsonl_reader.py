@@ -13,9 +13,13 @@ _COMMAND_TAGS = (
     "<bash-input>",
 )
 
+_SESSION_CONTINUATION_PREFIX = "This session is being continued from a previous conversation that ran out of context."
+
 
 def _is_excluded(content: str) -> bool:
     if content.lstrip().startswith("!"):
+        return True
+    if content.lstrip().startswith(_SESSION_CONTINUATION_PREFIX):
         return True
     return any(tag in content for tag in _COMMAND_TAGS)
 
