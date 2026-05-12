@@ -192,6 +192,32 @@
       padding: 40px 0;
       font-size: 13px;
     }
+
+    @keyframes hue-spin {
+      from { filter: hue-rotate(0deg); }
+      to   { filter: hue-rotate(360deg); }
+    }
+
+    .natural-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .rainbow-text {
+      background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      animation: hue-spin 3s linear infinite;
+      font-weight: 600;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rainbow-text { animation: none; }
+    }
   </style>
 </head>
 <body>
@@ -240,9 +266,12 @@
       const lang = item.language === 'ja' ? 'ja' : 'en';
       const badge = `<span class="badge badge-${lang}">${lang.toUpperCase()}</span>`;
       const time = `<span class="card-time">${fmtTime(item.ts)}</span>`;
-      const explanation = item.explanation
-        ? `<details><summary>Why</summary><div class="explanation">${escHtml(item.explanation)}</div></details>`
-        : '';
+      let explanation = '';
+      if (item.explanation === 'Already natural.') {
+        explanation = `<div class="natural-badge">🌈 <span class="rainbow-text">Perfect as-is!</span></div>`;
+      } else if (item.explanation) {
+        explanation = `<details><summary>Why</summary><div class="explanation">${escHtml(item.explanation)}</div></details>`;
+      }
       return `
         <button class="delete-btn" data-id="${item.id}" title="Hide">×</button>
         <div class="card-meta">${badge}${time}</div>
