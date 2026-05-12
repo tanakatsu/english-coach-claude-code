@@ -145,6 +145,48 @@ def test_excludes_system_reminder(tmp_path):
     assert [r["uuid"] for r in result] == ["u2"]
 
 
+def test_excludes_shell_command_bang(tmp_path):
+    path = tmp_path / "s.jsonl"
+    _write_jsonl(
+        path,
+        [
+            _user_msg("u1", "! rm -rf .venv && uv sync"),
+            _user_msg("u2", "real input"),
+        ],
+    )
+    result = new_user_messages(path, None)
+    assert [r["uuid"] for r in result] == ["u2"]
+
+
+def test_excludes_bash_stdout_tag(tmp_path):
+    path = tmp_path / "s.jsonl"
+    _write_jsonl(
+        path,
+        [
+            _user_msg(
+                "u1",
+                "<bash-stdout> M file.py ?? CLAUDE.md</bash-stdout><bash-stderr></bash-stderr>",
+            ),
+            _user_msg("u2", "real input"),
+        ],
+    )
+    result = new_user_messages(path, None)
+    assert [r["uuid"] for r in result] == ["u2"]
+
+
+def test_excludes_bash_input_tag(tmp_path):
+    path = tmp_path / "s.jsonl"
+    _write_jsonl(
+        path,
+        [
+            _user_msg("u1", "<bash-input>git status -s</bash-input>"),
+            _user_msg("u2", "real input"),
+        ],
+    )
+    result = new_user_messages(path, None)
+    assert [r["uuid"] for r in result] == ["u2"]
+
+
 def test_excludes_content_as_list(tmp_path):
     path = tmp_path / "s.jsonl"
     msg = {

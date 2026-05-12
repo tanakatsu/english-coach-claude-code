@@ -8,10 +8,15 @@ _COMMAND_TAGS = (
     "<local-command-",
     "<task-notification>",
     "<system-reminder>",
+    "<bash-stdout>",
+    "<bash-stderr>",
+    "<bash-input>",
 )
 
 
 def _is_excluded(content: str) -> bool:
+    if content.lstrip().startswith("!"):
+        return True
     return any(tag in content for tag in _COMMAND_TAGS)
 
 
