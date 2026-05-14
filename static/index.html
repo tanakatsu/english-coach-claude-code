@@ -218,6 +218,39 @@
     @media (prefers-reduced-motion: reduce) {
       .rainbow-text { animation: none; }
     }
+
+    /* Random button — visually distinct from filter buttons */
+    #random-btn {
+      margin-left: 6px;
+      padding: 5px 14px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 13px;
+      color: #666;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    #random-btn:hover { border-color: #555; color: #333; }
+    #random-btn:focus-visible { outline: 2px solid #1a1a2e; outline-offset: 2px; }
+
+    /* Flashcard mode: hide correction and explanation.
+       card-meta (badge + timestamp) stays visible — intentional, does not reveal the correction. */
+    #latest-card.flashcard-mode .arrow,
+    #latest-card.flashcard-mode .correction,
+    #latest-card.flashcard-mode details,
+    #latest-card.flashcard-mode .natural-badge {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #latest-card.flashcard-mode { cursor: pointer; }
+
+    #flashcard-hint {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #aaa;
+    }
   </style>
 </head>
 <body>
@@ -230,6 +263,7 @@
     <div id="latest-card" hidden>
       <div class="label">Latest correction</div>
       <div id="latest-content"></div>
+      <div id="flashcard-hint" hidden>Tap to reveal →</div>
     </div>
 
     <div id="filter-bar">
@@ -238,6 +272,7 @@
       <button data-filter="session">This Session</button>
       <button data-filter="week">This Week</button>
       <button data-filter="month">This Month</button>
+      <button id="random-btn">🎲 Random</button>
     </div>
 
     <ul id="history-list"></ul>
@@ -250,6 +285,8 @@
     const latestCard = document.getElementById('latest-card');
     const latestContent = document.getElementById('latest-content');
     const lastUpdatedEl = document.getElementById('last-updated');
+    const flashcardHint = document.getElementById('flashcard-hint');
+    const ALREADY_NATURAL = 'Already natural.';
 
     let allItems = [];
     let maxId = 0;
@@ -267,7 +304,7 @@
       const badge = `<span class="badge badge-${lang}">${lang.toUpperCase()}</span>`;
       const time = `<span class="card-time">${fmtTime(item.ts)}</span>`;
       let explanation = '';
-      if (item.explanation === 'Already natural.') {
+      if (item.explanation === ALREADY_NATURAL) {
         explanation = `<div class="natural-badge">🌈 <span class="rainbow-text">Perfect as-is!</span></div>`;
       } else if (item.explanation) {
         explanation = `<details><summary>Why</summary><div class="explanation">${escHtml(item.explanation)}</div></details>`;
@@ -345,6 +382,17 @@
       latestCard.hidden = false;
     }
 
+    function enterFlashcard(item) {
+      renderLatestCard(item);
+      latestCard.classList.add('flashcard-mode');
+      flashcardHint.hidden = false;
+    }
+
+    function exitFlashcard() {
+      latestCard.classList.remove('flashcard-mode');
+      flashcardHint.hidden = true;
+    }
+
     function updateLastUpdated() {
       lastUpdatedEl.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
@@ -375,7 +423,9 @@
           currentSessionId = newItems[0].session_id;
           allItems = [...newItems, ...allItems];
           prependItems(newItems);
-          renderLatestCard(applyFilter(allItems)[0] || newItems[0]);
+          if (!latestCard.classList.contains('flashcard-mode')) {
+            renderLatestCard(applyFilter(allItems)[0] || newItems[0]);
+          }
         }
         updateLastUpdated();
       } catch (e) {
@@ -388,7 +438,21 @@
       if (!btn) return;
       filter = btn.dataset.filter;
       document.querySelectorAll('#filter-bar button').forEach(b => b.classList.toggle('active', b === btn));
+      exitFlashcard();
       renderList(allItems);
+    });
+
+    document.getElementById('random-btn').addEventListener('click', () => {
+      const pool = applyFilter(allItems).filter(i => i.explanation !== ALREADY_NATURAL);
+      if (!pool.length) return;
+      const item = pool[Math.floor(Math.random() * pool.length)];
+      enterFlashcard(item);
+    });
+
+    latestCard.addEventListener('click', e => {
+      if (!latestCard.classList.contains('flashcard-mode')) return;
+      if (e.target.closest('.delete-btn') || e.target.closest('.confirm-overlay')) return;
+      exitFlashcard();
     });
 
     document.addEventListener('click', e => {
@@ -419,6 +483,7 @@
             card.classList.remove('confirm-state');
             const overlay = card.querySelector('.confirm-overlay');
             if (overlay) overlay.remove();
+            exitFlashcard();
             const next = applyFilter(allItems)[0];
             if (next) { renderLatestCard(next); } else { latestCard.hidden = true; }
           })
