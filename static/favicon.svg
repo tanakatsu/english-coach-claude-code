@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <!-- Deep purple to vivid blue background -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#2e1065"/>
+      <stop offset="100%" stop-color="#1e40af"/>
+    </linearGradient>
+
+    <!-- Amber-to-white-to-sky gradient for the "E", applied in user space -->
+    <linearGradient id="letter" x1="16" y1="5" x2="16" y2="27" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#fbbf24"/>
+      <stop offset="45%"  stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#93c5fd"/>
+    </linearGradient>
+
+    <!-- Subtle top-left lens shine -->
+    <radialGradient id="shine" cx="0.25" cy="0.15" r="0.55" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+  <!-- Lens shine overlay -->
+  <rect width="32" height="32" rx="7" fill="url(#shine)"/>
+
+  <!-- Bold italic "E" (skewX gives forward-motion energy) -->
+  <g transform="translate(16,16) skewX(-9) translate(-16,-16)">
+    <!-- Vertical bar -->
+    <rect x="6.5" y="5"    width="4.5" height="22"  rx="1.5" fill="url(#letter)"/>
+    <!-- Top bar -->
+    <rect x="6.5" y="5"    width="19"  height="4.5" rx="1.5" fill="url(#letter)"/>
+    <!-- Middle bar (shorter = classic style) -->
+    <rect x="6.5" y="13.75" width="14"  height="4.5" rx="1.5" fill="url(#letter)"/>
+    <!-- Bottom bar -->
+    <rect x="6.5" y="22.5" width="19"  height="4.5" rx="1.5" fill="url(#letter)"/>
+  </g>
+</svg>

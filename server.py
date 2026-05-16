@@ -6,6 +6,7 @@ import uvicorn
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from english_coach import db
@@ -50,6 +51,11 @@ class SummaryIn(BaseModel):
 @app.get("/")
 def index():
     return FileResponse(_STATIC_DIR / "index.html")
+
+
+@app.get("/favicon.svg")
+def favicon():
+    return FileResponse(_STATIC_DIR / "favicon.svg", media_type="image/svg+xml")
 
 
 @app.post("/api/feedback")
