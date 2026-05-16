@@ -261,7 +261,7 @@
 
   <main>
     <div id="latest-card" hidden>
-      <div class="label">Latest correction</div>
+      <div id="latest-card-label" class="label">Latest correction</div>
       <div id="latest-content"></div>
       <div id="flashcard-hint" hidden>Tap to reveal →</div>
     </div>
@@ -292,6 +292,7 @@
     let maxId = 0;
     let filter = 'all';
     let currentSessionId = null;
+    let isRandomMode = false;
 
     function fmtTime(ts) {
       try {
@@ -438,6 +439,8 @@
       if (!btn) return;
       filter = btn.dataset.filter;
       document.querySelectorAll('#filter-bar button').forEach(b => b.classList.toggle('active', b === btn));
+      isRandomMode = false;
+      document.getElementById('latest-card-label').textContent = 'Latest correction';
       exitFlashcard();
       renderList(allItems);
     });
@@ -446,6 +449,8 @@
       const pool = applyFilter(allItems).filter(i => i.explanation !== ALREADY_NATURAL);
       if (!pool.length) return;
       const item = pool[Math.floor(Math.random() * pool.length)];
+      isRandomMode = true;
+      document.getElementById('latest-card-label').textContent = 'Random pick';
       enterFlashcard(item);
     });
 
