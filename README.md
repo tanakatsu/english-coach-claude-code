@@ -95,9 +95,12 @@ The hook fires automatically when each Claude Code session ends. Your messages a
 ## Dashboard
 
 The dashboard shows:
-- **Latest correction** — the most recent message, highlighted at the top
-- **Session history** — all corrections, with language badge, original text, corrected text, and explanation (expandable)
-- **Filter by** — Today / This session / All
+- **Latest correction** — the most recent message, highlighted at the top with a yellow banner
+- **Session history** — all corrections, with language badge (JA/EN), original text, corrected text, timestamp (time for today's entries, date for older ones), and explanation (expandable)
+- **Filter by** — All / Today / This Session / This Week / This Month
+- **Random flashcard mode** — press 🎲 Random to pick a random correction; the correction is hidden until you tap to reveal it
+- **Hide** — × button on each card soft-deletes a correction from the list (with confirmation)
+- **Already natural** — when your text needed no changes, an animated 🌈 rainbow badge celebrates it
 
 ## Project structure
 
