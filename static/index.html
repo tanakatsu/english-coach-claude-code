@@ -296,7 +296,12 @@
 
     function fmtTime(ts) {
       try {
-        return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const d = new Date(ts);
+        const today = new Date().toLocaleDateString('en-CA');
+        if (d.toLocaleDateString('en-CA') === today) {
+          return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        return d.toLocaleDateString('ja-JP');
       } catch { return ts; }
     }
 
